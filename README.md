@@ -76,4 +76,5 @@ ThreadX Demo
 
 ## Hardware License
 
-To use Azure RTOS on commerical project, please see [LICENSE.txt](./LICENSE.txt) and [LICENSED-HARDWARE.txt](./LICENSED-HARDWARE.txt).
+* To use Azure RTOS on commerical project, please see [LICENSE.txt](https://github.com/azure-rtos/threadx/blob/master/LICENSE.txt) and [LICENSED-HARDWARE.txt](https://github.com/azure-rtos/threadx/blob/master/LICENSED-HARDWARE.txt).
+* To use cyw43-driver, please see [LICENSE](https://github.com/georgerobotics/cyw43-driver/blob/main/LICENSE).
