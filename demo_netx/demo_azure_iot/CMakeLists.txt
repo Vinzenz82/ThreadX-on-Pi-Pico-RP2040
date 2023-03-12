@@ -25,7 +25,7 @@ target_compile_definitions(
           SAMPLE_DEVICE_MANUFACTURER=\"${MANUFACTURER}\"
           SAMPLE_DEVICE_MODEL=\"${MODEL}\")
 
-# pico_enable_stdio_usb(${PROJECT_NAME} 1)
+pico_enable_stdio_usb(${PROJECT_NAME} ${ENABLE_USB})
 pico_add_extra_outputs(${PROJECT_NAME})
 target_link_libraries(${PROJECT_NAME} nx_driver_pico_w)
 target_include_directories(${PROJECT_NAME} PRIVATE ${PICO_FLASHLOADER_PATH})
@@ -42,7 +42,7 @@ target_compile_definitions(
           SAMPLE_DEVICE_MANUFACTURER=\"${MANUFACTURER}\"
           SAMPLE_DEVICE_MODEL=\"${MODEL}\")
 
-# pico_enable_stdio_usb(${UPDATE_PROJECT_NAME} 1)
+pico_enable_stdio_usb(${UPDATE_PROJECT_NAME} ${ENABLE_USB})
 pico_add_extra_outputs(${UPDATE_PROJECT_NAME})
 target_link_libraries(${UPDATE_PROJECT_NAME} nx_driver_pico_w)
 set_linker_script(${UPDATE_PROJECT_NAME} memmap_application.ld)

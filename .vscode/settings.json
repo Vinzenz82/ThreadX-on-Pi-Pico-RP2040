@@ -4,7 +4,8 @@
     "cmake.generator": "Ninja",
     "cmake.buildDirectory": "${workspaceFolder}/build",
     "cmake.configureArgs": [
-        "-DPICO_BOARD=pico_w"
+        "-DPICO_BOARD=pico_w",
+        "-DENABLE_USB=1"
     ],
     "files.associations": {
         "*.h": "c"

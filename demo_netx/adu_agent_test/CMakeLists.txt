@@ -5,6 +5,7 @@ include(../flash_loader/flash_loader.cmake)
 
 # build demo_update
 add_executable(${DEMO_UPDATE} ../../main.c ../tx_initialize_low_level.S  ../../demo_threadx/demo_threadx.c)
+pico_enable_stdio_usb(${DEMO_UPDATE} ${ENABLE_USB})
 pico_add_extra_outputs(${DEMO_UPDATE})
 if (PICO_CYW43_SUPPORTED) # set by PICO_BOARD=pico_w
     target_link_libraries(${DEMO_UPDATE} pico_cyw43_arch_none )
@@ -24,6 +25,7 @@ add_custom_target(${DEMO_UPDATE}_bin.h_gen ALL DEPENDS ${DEMO_UPDATE_FILE})
 
 # build adu_agent_test
 add_executable(${PROJECT_NAME} ../../main.c adu_agent_test.c ../demo_azure_iot/nx_azure_iot_adu_agent_driver_pico_w.c)
+pico_enable_stdio_usb(${PROJECT_NAME} ${ENABLE_USB})
 target_link_libraries(${PROJECT_NAME} nx_driver_pico_w)
 pico_add_extra_outputs(${PROJECT_NAME})
 target_include_directories(${PROJECT_NAME} PRIVATE ${PICO_FLASHLOADER_PATH})

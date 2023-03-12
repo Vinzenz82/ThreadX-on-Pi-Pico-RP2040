@@ -8,6 +8,11 @@ project(Azure-RTOS-on-Raspberry-Pi-Pico-RP2040)
 
 pico_sdk_init()
 
+if (NOT DEFINED ENABLE_USB)
+    set(ENABLE_USB 0)
+endif()
+message(STATUS "ENABLE_USB: ${ENABLE_USB}")
+
 set(THREADX_ARCH "cortex_m0")
 set(THREADX_TOOLCHAIN "gnu")
 add_subdirectory(lib/threadx)

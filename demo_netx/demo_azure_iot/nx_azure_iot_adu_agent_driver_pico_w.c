@@ -221,7 +221,9 @@ void nx_azure_iot_adu_agent_driver_pico_w(NX_AZURE_IOT_ADU_AGENT_DRIVER *driver_
             /* Update crc and flash header. */
             flash_header = (tFlashHeader *)flash_header_buffer;
             flash_header -> crc32 = flash_crc;
+            TX_DISABLE
             flash_range_program(FLASH_IMAGE_OFFSET, flash_header_buffer, sizeof(flash_header_buffer));
+            TX_RESTORE
 
             /* Set the new firmware for next boot.  */
             printf("Driver firmware installed successfully.\r\n");
