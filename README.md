@@ -1,80 +1,45 @@
-﻿# Azure RTOS threadx on Raspberry Pi PR2040
+﻿# Azure RTOS on Raspberry Pi Pico W
 
-This sample demonstrates [Azure RTOS threadx](https://azure.com/rtos) on Raspberry Pi RP2040 Microcontroller
+This repository demonstrates [Azure RTOS](https://azure.com/rtos) on [Raspberry Pi Pico W](https://www.raspberrypi.com/documentation/microcontrollers/raspberry-pi-pico.html#raspberry-pi-pico-w-and-pico-wh).
 
 ## Contents
 
 | File/folder       | Description                                |
 |-------------------|--------------------------------------------|
-| `demo_threadx.c`    | Sample source code.                        |
-| `threadx`           | Azure RTOS ThreadX source code and cortex-m0 port.            |
-| `tx_initialize_low_level.S`     | RP2040 specific low-level initialization code.                         |
-| `main.c`       | RP2040 user application entry point.                          |
+| `demo_netx`       | Sample source code for NetX projects       |
+| `demo_threadx`    | Sample source code for ThreadX projects    |
+| `lib`             | Azure RTOS and other repositories.         |
+| `main.c`          | Pico W user application entry point.       |
 
 ## Prerequisites
 
-1. [Raspberry Pi Pico](https://www.raspberrypi.org/products/raspberry-pi-pico/) board
+1. [Raspberry Pi Pico W](https://www.raspberrypi.org/products/raspberry-pi-pico/) board.
 
 2. A terminal emulator (such as [Putty](https://www.chiark.greenend.org.uk/~sgtatham/putty/) or [Tera Term](https://ttssh2.osdn.jp/index.html.en) to display the output.
 
-3. Follow chapter 8.2 of [Getting Started with Raspberry Pi Pico](https://datasheets.raspberrypi.org/pico/getting-started-with-pico.pdf) to setup the build environment on Windows 10.
+3. [Codespaces](https://github.com/features/codespaces)(**recommended**) or [VS Code](https://code.visualstudio.com/) + [Dev Container](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers).
 
 ## Build
-### Windows
-1. Install pico-sdk.
-1. Clone this repository (and threadx as a submodule) alongside the pico-sdk (>= 1.2.0) directory. (This project is an external project depends on pico-sdk)
-   
-   ```
-   git clone --recurse-submodules https://github.com/xiongyu0523/Azure-RTOS-on-Raspberry-Pi-Pico-RP2040
-   ```
 
-1. Open a **Developer command prompt** for VS2019 and go to the cloned project to build
-   
-   ```
-   cd Azure-RTOS-on-Azure-Sphere-Mediatek-MT3620
-   mkdir build
-   cd build
-   # assume PICO-SDK-PATH is set to ../../pico-sdk
-   cmake .. -G "NMake Makefiles"
-   # waiting for namke project generation
-   nmake 
-   ```
-   `Note: for target pico_w, replace cmake command above with: cmake .. -G "NMake Makefiles"  -DPICO_BOARD=pico_w`
+### Codespaces
+1. Go to root of this [repository](https://github.com/TiejunMS/Azure-RTOS-on-Raspberry-Pi-Pico-RP2040).
+1. Choose `Code | Open with Codespaces`, to create and launch your Codespaces environment.
+1. Open [/.vscode/settings.json](/.vscode/settings.json). Update `WIFI_SSID` and `WIFI_PASSWORD`.
+1. To run *demo_netx/demo_azure_iot* sample, follow readme in this project to update configuration.
+1. Press `F7` to build the application.
+    > Choose the `GCC 9.2.1 arm-non-eabi` CMake kit if prompted.
+1. Download binary file from `build` folder. See more details in readme of each project.
 
-### Codespace
-1. Open the project in codespace.
-1. Open a terminal to build.
-   
-   ```
-   cmake -Bbuild -GNinja
-   cmake --build build
-   ```
-   `Note: for target pico_w, replace cmake generation command above with: cmake -Bbuild -GNinja -DPICO_BOARD=pico_w`
-1. Download `Azure-RTOS-on-Raspberry-Pi-Pico-RP2040.uf2` file in build folder.
 ## Run
 
-1. Hold the BOOTSEL button on Raspberry Pi Pico and connect micro-USB cable, you will see a new USB drive `PRI-PR2` is mounted.
+1. Hold the BOOTSEL button on Raspberry Pi Pico W and connect micro-USB cable, you will see a new USB drive `PRI-PR2` is mounted.
 
-1. Drag and drop the `Azure-RTOS-on-Raspberry-Pi-Pico-RP2040.uf2` file in build folder to the USB drive
+1. Drag and drop the binary file in build folder to the USB drive
 
 ## Observe the output
 
-Open a terminal and connect to the `USB Serial Device (COMx)` just enumerated. You will see a statistical data of multiple tasks printed every second and LED is blinking at 1Hz.
+Open a terminal and connect to the `USB Serial Device (COMx)` just enumerated. You will see output. 
 
-```
-ThreadX Demo
-**** ThreadX Demonstration on Raspberry Pi Pico ****
-           thread 0 events sent:          108
-           thread 1 messages sent:        3926897
-           thread 2 messages received:    3926877
-           thread 3 obtained semaphore:   268
-           thread 4 obtained semaphore:   268
-           thread 5 events received:      107
-           thread 6 mutex obtained:       268
-           thread 7 mutex obtained:       268
-```
+## License
 
-## Hardware License
-
-* To use Azure RTOS on commerical project, please see [LICENSE.txt](https://github.com/azure-rtos/threadx/blob/master/LICENSE.txt) and [LICENSED-HARDWARE.txt](https://github.com/azure-rtos/threadx/blob/master/LICENSED-HARDWARE.txt).
-* To use cyw43-driver, please see [LICENSE](https://github.com/georgerobotics/cyw43-driver/blob/main/LICENSE).
+This project is licensed under the [MIT](LICENSE) license.
