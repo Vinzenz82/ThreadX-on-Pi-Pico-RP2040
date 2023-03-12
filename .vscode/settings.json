@@ -7,6 +7,10 @@
         "-DPICO_BOARD=pico_w",
         "-DENABLE_USB=1"
     ],
+    "cmake.configureEnvironment": {
+        "WIFI_SSID": "",
+        "WIFI_PASSWORD": ""
+    },
     "files.associations": {
         "*.h": "c"
     },
