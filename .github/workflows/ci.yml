@@ -16,5 +16,5 @@ jobs:
       - name: Build and run dev container task
         uses: devcontainers/ci@v0.3
         with:
-          runCmd: cmake -Bbuild -GNinja &&
-                  cmake --build build -DPICO_BOARD=pico_w -DENABLE_USB=1
+          runCmd: cmake -Bbuild -GNinja -DPICO_BOARD=pico_w -DENABLE_USB=1 &&
+                  cmake --build build

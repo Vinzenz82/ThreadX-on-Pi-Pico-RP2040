@@ -18,8 +18,6 @@ if (PICO_CYW43_SUPPORTED) # set by PICO_BOARD=pico_w
         set(WIFI_SSID "${WIFI_SSID}" CACHE INTERNAL "WiFi SSID for examples")
         set(WIFI_PASSWORD "${WIFI_PASSWORD}" CACHE INTERNAL "WiFi password for examples")
 
-        set(NXD_ENABLE_FILE_SERVERS OFF CACHE INTERNAL "Includes a dependency on FileX to support 'server' protocol handlers")
-        set(NXD_ENABLE_AZURE_IOT ON CACHE INTERNAL "Enable Azure IoT")
         add_subdirectory(nx_driver)
         add_subdirectory(flash_loader)
         add_subdirectory(demo_netx_ping)
