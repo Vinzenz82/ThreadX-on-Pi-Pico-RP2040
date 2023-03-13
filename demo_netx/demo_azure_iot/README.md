@@ -1,5 +1,5 @@
 # Demo Azure IoT
-TBD
+This project is [Azure IoT Middleware for Azure RTOS](https://github.com/azure-rtos/netxduo/blob/master/addons/azure_iot/README.md). All the [features](https://github.com/azure-rtos/netxduo/blob/master/addons/azure_iot/README.md#features) are supported in this project, including [device update for IoT Hub](https://github.com/azure-rtos/netxduo/blob/master/addons/azure_iot/README.md#device-update-for-iot-hub).
 
 ## Binary file
 * The built binary file is located at *build/demo_netx/demo_azure_iot/demo_azure_iot.combined.uf2*.
