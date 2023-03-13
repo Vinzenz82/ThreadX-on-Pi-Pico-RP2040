@@ -43,3 +43,6 @@ Open a terminal and connect to the `USB Serial Device (COMx)` just enumerated. Y
 ## License
 
 This project is licensed under the [MIT](LICENSE) license.
+ > Note, external libraries need commercial license.
+   * Azure RTOS [licensed hardware](https://github.com/azure-rtos/threadx/blob/master/LICENSED-HARDWARE.txt)
+   * [cyw43-driver](https://github.com/TiejunMS/cyw43-driver/blob/main/LICENSE)
