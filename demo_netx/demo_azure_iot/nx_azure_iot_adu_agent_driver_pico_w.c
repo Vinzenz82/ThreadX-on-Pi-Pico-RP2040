@@ -31,6 +31,7 @@ static UINT flash_crc;
 
 void nx_azure_iot_adu_agent_driver_pico_w(NX_AZURE_IOT_ADU_AGENT_DRIVER *driver_req_ptr);
 
+/* crc32() is copied from https://github.com/rhulme/pico-flashloader/blob/868cb0b00d452bae2f4430e734c8baf6c3bf6654/app.c#L74 */
 static UINT crc32(UCHAR *data, UINT len, UINT crc)
 {
 INT bit;
