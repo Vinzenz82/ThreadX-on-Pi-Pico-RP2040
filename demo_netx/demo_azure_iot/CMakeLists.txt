@@ -52,6 +52,6 @@ set(ADU_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/tools/create-adu-import-manifest.sh)
 set(MANIFEST_FILE ${UPDATE_PROJECT_NAME}.importmanifest.json)
 add_custom_command(OUTPUT ${MANIFEST_FILE} DEPENDS ${UPDATE_PROJECT_NAME}
             COMMENT "Generate manifest file"
-            COMMAND ${ADU_SCRIPT}  -c "manufacturer:RaspberryPi" -c "model:PicoW" -p "RaspberryPi" -n "PicoW" -v "2.0.0" -h "microsoft/swupdate:1" -r "installedCriteria:${UPDATE_VERSION}" ${CMAKE_CURRENT_BINARY_DIR}/${UPDATE_PROJECT_NAME}.bin>${CMAKE_CURRENT_BINARY_DIR}/${MANIFEST_FILE}
+            COMMAND ${ADU_SCRIPT}  -c "manufacturer:${MANUFACTURER}" -c "model:${MODEL}" -p "RaspberryPi" -n "PicoW" -v "2.0.0" -h "microsoft/swupdate:1" -r "installedCriteria:${UPDATE_VERSION}" ${CMAKE_CURRENT_BINARY_DIR}/${UPDATE_PROJECT_NAME}.bin>${CMAKE_CURRENT_BINARY_DIR}/${MANIFEST_FILE}
             )
 add_custom_target(${MANIFEST_FILE}_gen ALL DEPENDS ${MANIFEST_FILE})
