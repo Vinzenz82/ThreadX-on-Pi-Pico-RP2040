@@ -14,7 +14,7 @@ endif()
 message(STATUS "ENABLE_USB: ${ENABLE_USB}")
 
 set(NXD_ENABLE_FILE_SERVERS OFF CACHE INTERNAL "Includes a dependency on FileX to support 'server' protocol handlers")
-set(NXD_ENABLE_AZURE_IOT ON CACHE INTERNAL "Enable Azure IoT")
+set(NXD_ENABLE_AZURE_IOT OFF CACHE INTERNAL "Enable Azure IoT")
 
 set(THREADX_ARCH "cortex_m0")
 set(THREADX_TOOLCHAIN "gnu")

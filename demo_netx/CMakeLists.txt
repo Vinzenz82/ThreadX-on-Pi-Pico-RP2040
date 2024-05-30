@@ -21,11 +21,11 @@ if (PICO_CYW43_SUPPORTED) # set by PICO_BOARD=pico_w
         add_subdirectory(nx_driver)
         add_subdirectory(flash_loader)
         add_subdirectory(demo_netx_ping)
-        add_subdirectory(demo_azure_iot)
-        add_subdirectory(adu_agent_test)
+        #add_subdirectory(demo_azure_iot)
+        #add_subdirectory(adu_agent_test)
 
         target_compile_definitions(netxduo INTERFACE
-                                   -DNXD_MQTT_CLOUD_ENABLE
+                                   #-DNXD_MQTT_CLOUD_ENABLE
                                    -DNX_SECURE_ENABLE
                                    -DNX_ENABLE_IP_PACKET_FILTER
                                    -DNX_ENABLE_EXTENDED_NOTIFY_SUPPORT
