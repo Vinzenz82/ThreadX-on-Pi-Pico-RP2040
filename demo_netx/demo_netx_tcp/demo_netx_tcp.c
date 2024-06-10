@@ -17,16 +17,29 @@ TX_THREAD         thread_0;
 UCHAR             thread_0_stack[2048];
 #endif
 
-//tcp server
+/////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////// tcp server ////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////
+#define MULTI_SOCKET
+
 TX_THREAD         thread_1;
+
 UCHAR             thread_1_stack[2048];
-NX_TCP_SOCKET           server_socket;
+#ifndef MULTI_SOCKET
+    NX_TCP_SOCKET server_socket;
+#else
+    NX_TCP_SOCKET server_socket[3];
+    static ULONG g_not_listening = TX_FALSE;
+#endif
+
 #define		SOCKET_PORT		15555
 ULONG thread_1_counter;
+/////////////////////////////////////////////////////////////////////////////////
+
 
 /* Define the IP thread's stack area.  */
 
-ULONG             ip_thread_stack[2 * 1024 / sizeof(ULONG)];
+ULONG ip_thread_stack[2 * 1024 / sizeof(ULONG)];
 
 
 /* Define packet pool for the demonstration.  */
@@ -51,6 +64,7 @@ VOID    thread_0_entry(ULONG thread_input);
 void thread_1_entry(ULONG thread_input);
 void thread_1_connect_received(NX_TCP_SOCKET *server_socket, UINT port);
 void thread_1_disconnect_received(NX_TCP_SOCKET *server_socket);
+void g_tcp_sck_receive_cb(NX_TCP_SOCKET *p_server_socketsck);
 
 VOID nx_driver_pico_w(NX_IP_DRIVER *driver_req_ptr);
 
@@ -231,8 +245,6 @@ ULONG      actual_status;
     /* Wait 1 second for the IP thread to finish its initilization. */
     tx_thread_sleep(NX_IP_PERIODIC_RATE);
 
-
-
     /* Ensure the IP instance has been initialized.  */
     status =  nx_ip_status_check(&ip_0, NX_IP_INITIALIZE_DONE, &actual_status, NX_IP_PERIODIC_RATE);
 
@@ -244,10 +256,21 @@ ULONG      actual_status;
         return;
     }
 
+    #ifndef MULTI_SOCKET
     /* Create a socket.  */
     status =  nx_tcp_socket_create(&ip_0, &server_socket, "Server Socket",
                                    NX_IP_NORMAL, NX_DONT_FRAGMENT, NX_IP_TIME_TO_LIVE, 100,
                                    NX_NULL, thread_1_disconnect_received);
+    #else
+        /* Create all sockets */
+        for (INT i = 0; i < 3; i++)
+        {
+            status = nx_tcp_socket_create(&ip_0, &server_socket[i], "Multi Socket",
+                                        NX_IP_NORMAL, NX_DONT_FRAGMENT,
+                                        NX_IP_TIME_TO_LIVE, 512, NX_NULL,
+                                        thread_1_disconnect_received);
+        }
+    #endif
 
     /* Check for error.  */
     if (status)
@@ -257,8 +280,12 @@ ULONG      actual_status;
     }
 
     /* Setup this thread to listen.  */
-    status =  nx_tcp_server_socket_listen(&ip_0, SOCKET_PORT, &server_socket, 5, thread_1_connect_received);
-
+    #ifndef MULTI_SOCKET
+        status =  nx_tcp_server_socket_listen(&ip_0, SOCKET_PORT, &server_socket, 5, thread_1_connect_received);
+    #else
+        /* Start listening on the first socket */
+        status =  nx_tcp_server_socket_listen(&ip_0, SOCKET_PORT, &server_socket[0], 0, thread_1_connect_received);
+    #endif
     /* Check for error.  */
     if (status)
     {
@@ -273,6 +300,12 @@ ULONG      actual_status;
         /* Increment thread 1's counter.  */
         thread_1_counter++;
         printf("Server waiting socket connection\n");
+
+        #ifdef MULTI_SOCKET
+        /* Everything else is handled from TCP callbacks dispatched from
+         * IP instance thread */
+        tx_thread_suspend(tx_thread_identify());
+        #else
 
         /* Accept a client socket connection.  */
         status =  nx_tcp_server_socket_accept(&server_socket, NX_WAIT_FOREVER);
@@ -337,13 +370,14 @@ ULONG      actual_status;
         	printf("Error on socket relisten, status: %d\n",status);
             error_counter++;
         }
+        #endif
     }
 }
 
 
 void  thread_1_connect_received(NX_TCP_SOCKET *socket_ptr, UINT port)
 {
-
+    #ifndef MULTI_SOCKET
     /* Check for the proper socket and port.  */
     if ((socket_ptr != &server_socket) || (port != SOCKET_PORT))
     {
@@ -354,16 +388,73 @@ void  thread_1_connect_received(NX_TCP_SOCKET *socket_ptr, UINT port)
     {
     	printf("packet received on port %d\n",port);
     }
+    #else
+    /* Incoming connection, accept and queueing new requests */
+    nx_tcp_server_socket_accept(socket_ptr, NX_NO_WAIT);
+    nx_tcp_server_socket_unlisten(&ip_0, port);
+    nx_tcp_socket_receive_notify(socket_ptr, g_tcp_sck_receive_cb);
+
+        /* Attempt to find another idle socket to start listening on */
+    ULONG state = 0;
+
+    for (INT i = 0; i < 3; i++)
+    {
+        /* Get socket state value */
+        nx_tcp_socket_info_get(&server_socket[i],
+                               0, 0, 0, 0, 0, 0, 0, &state, 0, 0, 0);
+
+        /* Start lisnening if socket is idle */
+        if (NX_TCP_CLOSED == state)
+        {
+            nx_tcp_server_socket_listen(&ip_0, port, &server_socket[i], 0,
+                                        thread_1_connect_received);
+
+            break;
+        }
+    }
+
+    /* Ran out of sockets, set appropriate flag to let next socket to
+     * disconnect know that it should start listening right away. */
+    if (NX_TCP_CLOSED != state)
+    {
+        g_not_listening = TX_TRUE;
+    }
+
+    #endif
 }
 
+void g_tcp_sck_receive_cb(NX_TCP_SOCKET * socket_ptr)
+{
+    NX_PACKET * p_packet;
+
+    /* This callback is invoked when data is already received. Retrieving
+     * packet with no suspension. */
+    nx_tcp_socket_receive(socket_ptr, &p_packet, NX_NO_WAIT);
+
+    /* Send packet back on the same TCP socket */
+    nx_tcp_socket_send(socket_ptr, p_packet, NX_NO_WAIT);
+
+}
 
 void  thread_1_disconnect_received(NX_TCP_SOCKET *socket)
 {
-
+    #ifndef MULTI_SOCKET
     /* Check for proper disconnected socket.  */
     if (socket != &server_socket)
     {
         error_counter++;
     }
+    #else
+        nx_tcp_server_socket_unaccept(socket);
+
+        /* If all sockets are busy, start listening again */
+        if (TX_TRUE == g_not_listening)
+        {
+            nx_tcp_server_socket_listen(&ip_0, SOCKET_PORT, socket, 0,
+                                        thread_1_connect_received);
+
+            g_not_listening = TX_FALSE;
+        }
+    #endif
 }
 #endif
