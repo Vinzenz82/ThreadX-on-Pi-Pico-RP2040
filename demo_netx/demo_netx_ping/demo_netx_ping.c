@@ -72,8 +72,10 @@ UINT  status;
 
     /* Check for pool creation error.  */
     if (status)
+    {
+        printf("nx_packet_pool_create failed: %d \n", status);
         error_counter++;
-
+    }
     /* Create an IP instance.  */
     status = nx_ip_create(&ip_0, 
                           "NetX IP Instance 0", 
@@ -91,7 +93,11 @@ UINT  status;
     
     /* Check for IP create errors.  */
     if (status)
+    {
+        printf("nx_ip_create failed: %d \n", status);
+        printf("NX_IP App: %d \n", (UINT)sizeof(NX_IP));
         error_counter++;
+    }
         
     /* Enable ARP and supply ARP cache memory for IP Instance 0.  */
     status =  nx_arp_enable(&ip_0, (void *)arp_space_area, sizeof(arp_space_area));
@@ -120,6 +126,8 @@ UINT  status;
     /* Check for errors.  */
     if (status)
         error_counter++;   
+
+    printf("Error count: %d \n", error_counter);
 
 #ifdef NX_ENABLE_DHCP
     /* Create the main thread.  */
@@ -181,6 +189,44 @@ ULONG   temp;
                (UINT) (network_mask[1]),
                (UINT) (network_mask[2]),
                (UINT) (network_mask[3]));
+
+        /* Get Gateway IP Address */
+        nx_ip_gateway_address_get(&ip_0, (ULONG *) &ip_address[0]);
+       
+        /* Convert IP address from little endian.  */
+        temp =  *((ULONG *) &ip_address[0]);
+        NX_CHANGE_ULONG_ENDIAN(temp);
+        *((ULONG *) &ip_address[0]) =  temp;
+
+        /* Output IP address. */
+        printf("Gateway address: %d.%d.%d.%d\n", 
+               (UINT) (ip_address[0]),
+               (UINT) (ip_address[1]),
+               (UINT) (ip_address[2]),
+               (UINT) (ip_address[3]));
+
+        /* Ping Gateway IP*/
+        NXD_ADDRESS server_ip;
+        NX_PACKET* response_ptr;
+        char *buffer = "abcd";
+
+        server_ip.nxd_ip_version = 4;
+        server_ip.nxd_ip_address.v4 = IP_ADDRESS(80,153,195,191);
+
+        while(1) 
+        {
+            ULONG time_b = tx_time_get();
+            status = nx_icmp_ping(&ip_0, server_ip.nxd_ip_address.v4, buffer, strlen(buffer), &response_ptr, 1000);
+            ULONG time_a = tx_time_get();
+
+            if(status == NX_SUCCESS){
+                nx_packet_release(response_ptr);
+            }
+
+            printf("nxd_icmp_ping : %xd %d\r\n", status, time_a - time_b);
+        }
     }
 }
+
+
 #endif

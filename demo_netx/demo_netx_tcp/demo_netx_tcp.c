@@ -289,7 +289,7 @@ ULONG      actual_status;
     /* Check for error.  */
     if (status)
     {
-    	printf("Set socket to listen on port, status: %d\n",status);
+    	printf("Error set socket to listen on port %d, status: %d\n",SOCKET_PORT, status);
         error_counter++;
     }
 
@@ -299,7 +299,7 @@ ULONG      actual_status;
 
         /* Increment thread 1's counter.  */
         thread_1_counter++;
-        printf("Server waiting socket connection\n");
+        printf("Server waiting on port: %d \n", SOCKET_PORT);
 
         #ifdef MULTI_SOCKET
         /* Everything else is handled from TCP callbacks dispatched from
@@ -390,6 +390,7 @@ void  thread_1_connect_received(NX_TCP_SOCKET *socket_ptr, UINT port)
     }
     #else
     /* Incoming connection, accept and queueing new requests */
+    printf("Accpet connection on public port: %d bind to local port: %d\n", port, socket_ptr->nx_tcp_socket_connect_port );
     nx_tcp_server_socket_accept(socket_ptr, NX_NO_WAIT);
     nx_tcp_server_socket_unlisten(&ip_0, port);
     nx_tcp_socket_receive_notify(socket_ptr, g_tcp_sck_receive_cb);
@@ -430,6 +431,8 @@ void g_tcp_sck_receive_cb(NX_TCP_SOCKET * socket_ptr)
     /* This callback is invoked when data is already received. Retrieving
      * packet with no suspension. */
     nx_tcp_socket_receive(socket_ptr, &p_packet, NX_NO_WAIT);
+
+    printf("Received %d data bytes on local port: %d\n", p_packet->nx_packet_length , socket_ptr->nx_tcp_socket_connect_port);
 
     /* Send packet back on the same TCP socket */
     nx_tcp_socket_send(socket_ptr, p_packet, NX_NO_WAIT);
