@@ -427,12 +427,35 @@ void  thread_1_connect_received(NX_TCP_SOCKET *socket_ptr, UINT port)
 void g_tcp_sck_receive_cb(NX_TCP_SOCKET * socket_ptr)
 {
     NX_PACKET * p_packet;
+    UINT       status;
+    ULONG length_rx = 0u;
 
     /* This callback is invoked when data is already received. Retrieving
      * packet with no suspension. */
     nx_tcp_socket_receive(socket_ptr, &p_packet, NX_NO_WAIT);
 
+    length_rx = p_packet->nx_packet_length;
+
+    char data[length_rx];
+
+    memcpy(&data, p_packet->nx_packet_prepend_ptr, p_packet->nx_packet_length);
+    nx_packet_release(p_packet);
+
     printf("Received %d data bytes on local port: %d\n", p_packet->nx_packet_length , socket_ptr->nx_tcp_socket_connect_port);
+    printf("Received %s\n", data);
+
+    /* Allocate a packet for client response. */
+    status =  nx_packet_allocate(&pool_0, &p_packet, NX_TCP_PACKET, NX_NO_WAIT);
+
+    if (status != NX_SUCCESS)
+    {
+        error_counter++;
+        return;
+    }
+
+    /* append data */
+    nx_packet_data_append(p_packet, "Response: ", 10, &pool_0, NX_NO_WAIT);
+    nx_packet_data_append(p_packet, data, length_rx, &pool_0, NX_NO_WAIT);
 
     /* Send packet back on the same TCP socket */
     nx_tcp_socket_send(socket_ptr, p_packet, NX_NO_WAIT);
