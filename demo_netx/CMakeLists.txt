@@ -21,6 +21,7 @@ if (PICO_CYW43_SUPPORTED) # set by PICO_BOARD=pico_w
         add_subdirectory(nx_driver)
         #add_subdirectory(flash_loader)
         add_subdirectory(demo_netx_ping)
+        add_subdirectory(demo_netx_tcp)
         #add_subdirectory(demo_azure_iot)
         #add_subdirectory(adu_agent_test)
 
