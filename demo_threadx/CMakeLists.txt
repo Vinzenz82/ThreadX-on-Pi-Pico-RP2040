@@ -1,6 +1,15 @@
 project(demo_threadx)
 
-add_executable(${PROJECT_NAME} ../main.c tx_initialize_low_level.S demo_threadx.c)
+
+set(SOURCE_FILES_APP 
+        ../main.c
+        ../../port/tx_initialize_low_level.S
+        demo_threadx.c
+)
+
+add_executable(${PROJECT_NAME} 
+        ${SOURCE_FILES_APP}
+)
 
 pico_enable_stdio_usb(${PROJECT_NAME} ${ENABLE_USB})
 

@@ -1,6 +1,20 @@
 project(demo_netx_tcp)
 
-add_executable(${PROJECT_NAME} ../../main.c ../tx_initialize_low_level.S demo_netx_tcp.c)
+set(SOURCE_FILES_APP 
+        ../../main.c
+        ../../port/tx_initialize_low_level.S
+        demo_netx_tcp.c
+        ../../middleware/nanoMODBUS/nanomodbus.c
+)
+
+add_executable(${PROJECT_NAME} 
+        ${SOURCE_FILES_APP}
+)
+
+target_include_directories(${PROJECT_NAME} PRIVATE
+        ../../middleware/nanoMODBUS/
+)
+
 target_compile_definitions(${PROJECT_NAME} PRIVATE
         NX_ENABLE_DHCP
         )
