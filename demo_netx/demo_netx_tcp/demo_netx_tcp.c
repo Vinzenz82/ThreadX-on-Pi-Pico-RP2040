@@ -3,7 +3,7 @@
 #include "tx_api.h"
 #include "nx_api.h"
 #include "nxd_dhcp_client.h"
-
+#include "nanomodbus.h"
 
 /* Define the ThreadX and NetX object control blocks...  */
 
@@ -239,6 +239,7 @@ void    thread_1_entry(ULONG thread_input)
 UINT       status;
 NX_PACKET *packet_ptr;
 ULONG      actual_status;
+nmbs_platform_conf platform_conf;
 
     NX_PARAMETER_NOT_USED(thread_input);
 

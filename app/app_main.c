@@ -9,6 +9,29 @@
 #include "hardware/gpio.h"
 #endif
 
+/*
+   This example application sets up an RTU server and handles modbus requests
+
+   This server supports the following function codes:
+   FC 01 (0x01) Read Coils
+   FC 03 (0x03) Read Holding Registers
+   FC 15 (0x0F) Write Multiple Coils
+   FC 16 (0x10) Write Multiple registers
+*/
+#include "nanomodbus.h"
+
+// The data model of this sever will support coils addresses 0 to 100 and registers addresses from 0 to 32
+#define COILS_ADDR_MAX 100
+#define REGS_ADDR_MAX 32
+
+// Our RTU address
+#define RTU_SERVER_ADDRESS 1
+
+// A single nmbs_bitfield variable can keep 2000 coils
+nmbs_bitfield server_coils = {0};
+uint16_t server_registers[REGS_ADDR_MAX] = {0};
+//--------------------------------------------------------------------------------------------------------
+
 //--------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------ DEFINES -----------------------------------
 //--------------------------------------------------------------------------------------------------------
@@ -57,6 +80,9 @@ ULONG                   thread_1_messages_sent;
 // ULONG                   thread_5_counter;
 // ULONG                   thread_6_counter;
 // ULONG                   thread_7_counter;
+ULONG                   modbus_read_call;
+ULONG                   modbus_write_call;
+
 
 
 /* Define thread prototypes.  */
@@ -69,6 +95,12 @@ void    thread_1_entry(ULONG thread_input);
 // void    thread_6_and_7_entry(ULONG thread_input);
 void callback_uart1_irq(void);
 
+int32_t read_serial(uint8_t* buf, uint16_t count, int32_t byte_timeout_ms, void* arg);
+int32_t write_serial(const uint8_t* buf, uint16_t count, int32_t byte_timeout_ms, void* arg);
+nmbs_error handle_read_coils(uint16_t address, uint16_t quantity, nmbs_bitfield coils_out, uint8_t unit_id, void *arg);
+nmbs_error handle_write_multiple_coils(uint16_t address, uint16_t quantity, const nmbs_bitfield coils, uint8_t unit_id, void *arg);
+nmbs_error handler_read_holding_registers(uint16_t address, uint16_t quantity, uint16_t* registers_out, uint8_t unit_id, void *arg);
+nmbs_error handle_write_multiple_registers(uint16_t address, uint16_t quantity, const uint16_t* registers, uint8_t unit_id, void *arg);
 
 
 /* Define main entry point.  */
@@ -89,18 +121,20 @@ void    tx_application_define(void *first_unused_memory)
 CHAR    *pointer;
 
 
-    /* Initialize UART1 */
+    /////////////////////////////////////////////////////////////////////////////////////////////////////
+    /********************************************* Initialize UART1 ************************************/
     uart_init(uart1, 115200);
     gpio_set_function(UART1_TX_PIN, GPIO_FUNC_UART);
     gpio_set_function(UART1_RX_PIN, GPIO_FUNC_UART);
     
     //irq_add_shared_handler (21, callback_uart1_irq, PICO_SHARED_IRQ_HANDLER_DEFAULT_ORDER_PRIORITY);
-    uart_set_fifo_enabled(uart1, false);
-    irq_set_exclusive_handler(UART1_IRQ, callback_uart1_irq);
-    irq_set_enabled (UART1_IRQ, true);
+    uart_set_fifo_enabled(uart1, true);
+    //irq_set_exclusive_handler(UART1_IRQ, callback_uart1_irq);
+    //irq_set_enabled (UART1_IRQ, true);
 
     // Now enable the UART to send interrupts - RX only
-    uart_set_irq_enables(uart1, true, false);
+    //uart_set_irq_enables(uart1, true, false);
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
 
     /* Create a byte memory pool from which to allocate the thread stacks.  */
     tx_byte_pool_create(&byte_pool_0, "byte pool 0", memory_area, DEMO_BYTE_POOL_SIZE);
@@ -245,16 +279,18 @@ UINT    status;
         /* Print results.  */
         printf("**** ThreadX Demonstration on Raspberry Pi Pico **** \n\n");
         printf("           thread 0 events sent:          %lu\n", thread_0_counter);
-        printf("           thread 1 messages sent:        %lu\n\n", thread_1_counter);
+        printf("           thread 1 messages sent:        %lu\n", thread_1_counter);
         // printf("           thread 2 messages received:    %lu\n", thread_2_counter);
         // printf("           thread 3 obtained semaphore:   %lu\n", thread_3_counter);
         // printf("           thread 4 obtained semaphore:   %lu\n", thread_4_counter);
         // printf("           thread 5 events received:      %lu\n", thread_5_counter);
         // printf("           thread 6 mutex obtained:       %lu\n", thread_6_counter);
         // printf("           thread 7 mutex obtained:       %lu\n\n", thread_7_counter);
+        printf("           modbus_read_call:       %lu\n", modbus_read_call);
+        printf("           modbus_write_call:       %lu\n\n", modbus_write_call);
 
-        /* Sleep for 50 ticks.  */
-        tx_thread_sleep(100);
+        /* Sleep for 100 ticks.  */
+        tx_thread_sleep(TX_TIMER_TICKS_PER_SECOND * 10);
 
         // /* Set event flag 0 to wakeup thread 5.  */
         // status =  tx_event_flags_set(&event_flags_0, 0x1, TX_OR);
@@ -262,15 +298,44 @@ UINT    status;
         // /* Check status.  */
         // if (status != TX_SUCCESS)
         //     break;
+
+        server_registers[0] = thread_0_counter & 0x00FF;
+        server_registers[1] = (thread_0_counter & 0xFF00) >> 16;
+
+
+        server_registers[2] = thread_1_counter & 0x00FF;
+        server_registers[3] = (thread_1_counter & 0xFF00) >> 16;
+
     }
 }
 
 
 void    thread_1_entry(ULONG thread_input)
 {
-
     UINT    status;
-    ULONG   actual_flags;
+    // ULONG   actual_flags;
+
+    nmbs_platform_conf platform_conf;
+    platform_conf.transport = NMBS_TRANSPORT_RTU;
+    platform_conf.read = read_serial;
+    platform_conf.write = write_serial;
+    platform_conf.arg = NULL;
+
+    nmbs_callbacks callbacks = {0};
+    callbacks.read_coils = handle_read_coils;
+    callbacks.write_multiple_coils = handle_write_multiple_coils;
+    callbacks.read_holding_registers = handler_read_holding_registers;
+    callbacks.write_multiple_registers = handle_write_multiple_registers;
+
+    // Create the modbus server
+    nmbs_t nmbs;
+    nmbs_error err = nmbs_server_create(&nmbs, RTU_SERVER_ADDRESS, &platform_conf, &callbacks);
+    if (err != NMBS_ERROR_NONE) {
+        printf("Error: Can not create Modbus server. \n");
+    }
+
+    nmbs_set_read_timeout(&nmbs, 1000);
+    nmbs_set_byte_timeout(&nmbs, 100);
 
     /* This thread simply sends messages to a queue shared by thread 2.  */
     while(1)
@@ -279,15 +344,20 @@ void    thread_1_entry(ULONG thread_input)
         /* Increment the thread counter.  */
         thread_1_counter++;
 
-        /* Wait for event flag 0.  */
-        status =  tx_event_flags_get(&event_flags_0, 0x1, TX_OR_CLEAR, 
-                                                &actual_flags, TX_WAIT_FOREVER);
+        nmbs_server_poll(&nmbs);
 
-        /* Check status.  */
-        if ((status != TX_SUCCESS) || (actual_flags != 0x1))
-            break;
+        /* Sleep for 100 ticks.  */
+        tx_thread_sleep(100);
 
-        uart_putc(uart1, 'B');
+        // /* Wait for event flag 0.  */
+        // status =  tx_event_flags_get(&event_flags_0, 0x1, TX_OR_CLEAR, 
+        //                                         &actual_flags, TX_WAIT_FOREVER);
+
+        // /* Check status.  */
+        // if ((status != TX_SUCCESS) || (actual_flags != 0x1))
+        //     break;
+
+        
     }
 }
 
@@ -449,4 +519,81 @@ void callback_uart1_irq(void)
         }
         //chars_rxed++;
     }
+}
+
+int32_t read_serial(uint8_t* buf, uint16_t count, int32_t byte_timeout_ms, void* arg) {
+    uint32_t timeout = byte_timeout_ms * 1000u;
+    uint16_t bytes_read = 0;
+    
+    modbus_read_call++;
+
+    if( uart_is_readable_within_us(uart1, timeout) )
+    {
+        uart_read_blocking(uart1, buf, count);
+        bytes_read = count;
+    }
+
+    return bytes_read;
+}
+
+
+int32_t write_serial(const uint8_t* buf, uint16_t count, int32_t byte_timeout_ms, void* arg) {
+    uint32_t timeout = byte_timeout_ms * 1000u;
+    uint16_t bytes_left = count;
+
+    modbus_write_call++;
+    
+    uart_write_blocking(uart1, buf, count);
+
+    return count;
+}
+
+nmbs_error handle_read_coils(uint16_t address, uint16_t quantity, nmbs_bitfield coils_out, uint8_t unit_id, void *arg) {
+  if (address + quantity > COILS_ADDR_MAX + 1)
+    return NMBS_EXCEPTION_ILLEGAL_DATA_ADDRESS;
+
+  // Read our coils values into coils_out
+  for (int i = 0; i < quantity; i++) {
+    bool value = nmbs_bitfield_read(server_coils, address + i);
+    nmbs_bitfield_write(coils_out, i, value);
+  }
+
+  return NMBS_ERROR_NONE;
+}
+
+
+nmbs_error handle_write_multiple_coils(uint16_t address, uint16_t quantity, const nmbs_bitfield coils, uint8_t unit_id, void *arg) {
+  if (address + quantity > COILS_ADDR_MAX + 1)
+    return NMBS_EXCEPTION_ILLEGAL_DATA_ADDRESS;
+
+  // Write coils values to our server_coils
+  for (int i = 0; i < quantity; i++) {
+    nmbs_bitfield_write(server_coils, address + i, nmbs_bitfield_read(coils, i));
+  }
+
+  return NMBS_ERROR_NONE;
+}
+
+
+nmbs_error handler_read_holding_registers(uint16_t address, uint16_t quantity, uint16_t* registers_out, uint8_t unit_id, void *arg) {
+  if (address + quantity > REGS_ADDR_MAX + 1)
+    return NMBS_EXCEPTION_ILLEGAL_DATA_ADDRESS;
+
+  // Read our registers values into registers_out
+  for (int i = 0; i < quantity; i++)
+    registers_out[i] = server_registers[address + i];
+
+  return NMBS_ERROR_NONE;
+}
+
+
+nmbs_error handle_write_multiple_registers(uint16_t address, uint16_t quantity, const uint16_t* registers, uint8_t unit_id, void *arg) {
+  if (address + quantity > REGS_ADDR_MAX + 1)
+    return NMBS_EXCEPTION_ILLEGAL_DATA_ADDRESS;
+
+  // Write registers values to our server_registers
+  for (int i = 0; i < quantity; i++)
+    server_registers[address + i] = registers[i];
+
+  return NMBS_ERROR_NONE;
 }
