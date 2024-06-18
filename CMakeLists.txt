@@ -4,7 +4,7 @@ set(ENV{PICO_CYW43_DRIVER_PATH} ${CMAKE_CURRENT_LIST_DIR}/lib/cyw43-driver)
 
 include(pico_sdk_import.cmake)
 
-project(Azure-RTOS-on-Raspberry-Pi-Pico-RP2040)
+project(ThreadX-On-Raspberry-Pi-Pico-RP2040)
 
 pico_sdk_init()
 
