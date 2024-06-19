@@ -2,7 +2,7 @@ project(app)
 
 set(SOURCE_FILES_APP 
         ../main.c
-        ../../port/tx_initialize_low_level.S
+        ../port/tx_initialize_low_level.S
         app_main.c
         ../middleware/nanoMODBUS/nanomodbus.c
 )

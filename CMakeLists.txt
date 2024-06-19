@@ -8,6 +8,8 @@ project(ThreadX-On-Raspberry-Pi-Pico-RP2040)
 
 pico_sdk_init()
 
+message(STATUS "PICO_BOARD: ${PICO_BOARD}")
+
 if (NOT DEFINED ENABLE_USB)
     set(ENABLE_USB 0)
 endif()

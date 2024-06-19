@@ -3,7 +3,7 @@ project(demo_threadx)
 
 set(SOURCE_FILES_APP 
         ../main.c
-        ../../port/tx_initialize_low_level.S
+        ../port/tx_initialize_low_level.S
         demo_threadx.c
 )
 
