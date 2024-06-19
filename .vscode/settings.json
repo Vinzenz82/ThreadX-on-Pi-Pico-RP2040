@@ -1,11 +1,10 @@
 {
     "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
-    "cmake.configureOnOpen": true,
+    "cmake.configureOnOpen": false,
+    "cmake.useCMakePresets": "always",
     "cmake.generator": "Ninja",
-    "cmake.buildDirectory": "${workspaceFolder}/build",
     "cmake.configureArgs": [
-        "-DPICO_BOARD=pico_w",
-        "-DENABLE_USB=1"
+        //"-DKEY=VALUE",
     ],
     "cmake.configureEnvironment": {
         "WIFI_SSID": "",

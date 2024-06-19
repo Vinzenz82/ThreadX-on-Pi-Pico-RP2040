@@ -1,4 +1,4 @@
-project(demo_netx_tcp)
+project(demo_netx_modbus_tcp)
 
 set(SOURCE_FILES_APP 
         ../../main.c
