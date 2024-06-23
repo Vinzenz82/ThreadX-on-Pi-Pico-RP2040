@@ -13,3 +13,6 @@
 [submodule "middleware/nanoMODBUS"]
 	path = middleware/nanoMODBUS
 	url = https://github.com/debevv/nanoMODBUS
+[submodule "lib/filex"]
+	path = lib/filex
+	url = https://github.com/eclipse-threadx/filex.git
