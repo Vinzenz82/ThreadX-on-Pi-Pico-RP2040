@@ -16,3 +16,6 @@
 [submodule "lib/filex"]
 	path = lib/filex
 	url = https://github.com/eclipse-threadx/filex.git
+[submodule "lib/no-OS-FatFS-SD-SDIO-SPI-RPi-Pico"]
+	path = lib/no-OS-FatFS-SD-SDIO-SPI-RPi-Pico
+	url = https://github.com/carlk3/no-OS-FatFS-SD-SDIO-SPI-RPi-Pico.git
