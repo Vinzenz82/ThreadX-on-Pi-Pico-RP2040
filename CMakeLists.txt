@@ -26,6 +26,8 @@ add_subdirectory(lib/threadx)
 
 set(NX_USER_FILE "${CMAKE_CURRENT_LIST_DIR}/config/nx_user_config.h")
 add_subdirectory(lib/netxduo)
+add_subdirectory(lib/filex)
 add_subdirectory(demo_threadx)
 add_subdirectory(demo_netx)
+add_subdirectory(demo_filex)
 add_subdirectory(app)
