@@ -253,6 +253,10 @@ UINT    status;
     gpio_init(PICO_DEFAULT_LED_PIN);
     gpio_set_dir(PICO_DEFAULT_LED_PIN, GPIO_OUT);
     gpio_put(PICO_DEFAULT_LED_PIN, 0);
+
+    gpio_init(16);
+    gpio_set_dir(16, GPIO_OUT);
+    gpio_put(16, 0);
 #endif
 
     /* This thread simply sits in while-forever-sleep loop.  */
@@ -343,6 +347,12 @@ void    thread_1_entry(ULONG thread_input)
 
         /* Increment the thread counter.  */
         thread_1_counter++;
+
+        if (thread_1_counter % 2 == 0) {
+            gpio_put(16, 1);
+        } else {
+            gpio_put(16, 0);
+        }
 
         nmbs_server_poll(&nmbs);
 
