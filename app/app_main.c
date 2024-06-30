@@ -3,6 +3,14 @@
 #include "pico/stdlib.h"
 #include "hardware/uart.h"
 
+//include SD lib begin
+#include "f_util.h"
+#include "ff.h"
+#include "rtc.h"
+#include "hw_config.h"
+//include SD lib end
+
+
 #if LIB_PICO_CYW43_ARCH == 1
 #include "pico/cyw43_arch.h"
 #else
@@ -30,6 +38,7 @@
 // A single nmbs_bitfield variable can keep 2000 coils
 nmbs_bitfield server_coils = {0};
 uint16_t server_registers[REGS_ADDR_MAX] = {0};
+
 //--------------------------------------------------------------------------------------------------------
 
 //--------------------------------------------------------------------------------------------------------
@@ -53,7 +62,7 @@ uint16_t server_registers[REGS_ADDR_MAX] = {0};
 
 TX_THREAD               thread_monitor;
 TX_THREAD               thread_1;
-// TX_THREAD               thread_2;
+TX_THREAD               thread_2;
 // TX_THREAD               thread_3;
 // TX_THREAD               thread_4;
 // TX_THREAD               thread_5;
@@ -73,7 +82,7 @@ UCHAR                   memory_area[DEMO_BYTE_POOL_SIZE];
 ULONG                   thread_0_counter;
 ULONG                   thread_1_counter;
 ULONG                   thread_1_messages_sent;
-// ULONG                   thread_2_counter;
+ULONG                   thread_2_counter;
 // ULONG                   thread_2_messages_received;
 // ULONG                   thread_3_counter;
 // ULONG                   thread_4_counter;
@@ -89,7 +98,7 @@ ULONG                   modbus_write_call;
 
 void    thread_monitor_entry(ULONG thread_input);
 void    thread_1_entry(ULONG thread_input);
-// void    thread_2_entry(ULONG thread_input);
+void    thread_2_entry(ULONG thread_input);
 // void    thread_3_and_4_entry(ULONG thread_input);
 // void    thread_5_entry(ULONG thread_input);
 // void    thread_6_and_7_entry(ULONG thread_input);
@@ -102,16 +111,15 @@ nmbs_error handle_write_multiple_coils(uint16_t address, uint16_t quantity, cons
 nmbs_error handler_read_holding_registers(uint16_t address, uint16_t quantity, uint16_t* registers_out, uint8_t unit_id, void *arg);
 nmbs_error handle_write_multiple_registers(uint16_t address, uint16_t quantity, const uint16_t* registers, uint8_t unit_id, void *arg);
 
-
 /* Define main entry point.  */
 
 void demo_threadx(void)
 {
+    time_init();
 
-    /* Enter the ThreadX kernel.  */
+    /* Enter the ThreadX kernel.  */    
     tx_kernel_enter();
 }
-
 
 /* Define what the initial system looks like.  */
 
@@ -161,12 +169,18 @@ CHAR    *pointer;
             pointer, DEMO_STACK_SIZE, 
             16, 16, 4, TX_AUTO_START);
 
-    // /* Allocate the stack for thread 2.  */
-    // tx_byte_allocate(&byte_pool_0, (VOID **) &pointer, DEMO_STACK_SIZE, TX_NO_WAIT);
 
-    // tx_thread_create(&thread_2, "thread 2", thread_2_entry, 2,  
-    //         pointer, DEMO_STACK_SIZE, 
-    //         16, 16, 4, TX_AUTO_START);
+        // See FatFs - Generic FAT Filesystem Module, "Application Interface",
+
+
+
+
+    // /* Allocate the stack for thread 2.  */
+    tx_byte_allocate(&byte_pool_0, (VOID **) &pointer, DEMO_STACK_SIZE, TX_NO_WAIT);
+
+    tx_thread_create(&thread_2, "thread 2", thread_2_entry, 2,  
+             pointer, DEMO_STACK_SIZE, 
+             16, 16, 4, TX_AUTO_START);
 
     // /* Allocate the stack for thread 3.  */
     // tx_byte_allocate(&byte_pool_0, (VOID **) &pointer, DEMO_STACK_SIZE, TX_NO_WAIT);
@@ -284,7 +298,7 @@ UINT    status;
         printf("**** ThreadX Demonstration on Raspberry Pi Pico **** \n\n");
         printf("           thread 0 events sent:          %lu\n", thread_0_counter);
         printf("           thread 1 messages sent:        %lu\n", thread_1_counter);
-        // printf("           thread 2 messages received:    %lu\n", thread_2_counter);
+        printf("           thread 2 messages received:    %lu\n", thread_2_counter);
         // printf("           thread 3 obtained semaphore:   %lu\n", thread_3_counter);
         // printf("           thread 4 obtained semaphore:   %lu\n", thread_4_counter);
         // printf("           thread 5 events received:      %lu\n", thread_5_counter);
@@ -372,31 +386,57 @@ void    thread_1_entry(ULONG thread_input)
 }
 
 
-// void    thread_2_entry(ULONG thread_input)
-// {
+void    thread_2_entry(ULONG thread_input)
+{
 
-// ULONG   received_message;
-// UINT    status;
+ULONG   received_message;
+UINT    status;
 
-//     /* This thread retrieves messages placed on the queue by thread 1.  */
-//     while(1)
-//     {
+    /* This thread retrieves messages placed on the queue by thread 1.  */
+    while(1)
+    {
 
-//         /* Increment the thread counter.  */
-//         thread_2_counter++;
+        /* Increment the thread counter.  */
+        thread_2_counter++;
 
-//         /* Retrieve a message from the queue.  */
-//         status = tx_queue_receive(&queue_0, &received_message, TX_WAIT_FOREVER);
 
-//         /* Check completion status and make sure the message is what we 
-//            expected.  */
-//         if ((status != TX_SUCCESS) || (received_message != thread_2_messages_received))
-//             break;
+     // See FatFs - Generic FAT Filesystem Module, "Application Interface",
+    // http://elm-chan.org/fsw/ff/00index_e.html
+    sd_card_t *pSD = sd_get_by_num(0);
+    FRESULT fr = f_mount(&pSD->fatfs, pSD->pcName, 1);
+    if (FR_OK != fr) panic("f_mount error: %s (%d)\n", FRESULT_str(fr), fr);
+    FIL fil;
+    const char* const filename = "filename.txt";
+    fr = f_open(&fil, filename, FA_OPEN_APPEND | FA_WRITE);
+    if (FR_OK != fr && FR_EXIST != fr)
+        panic("f_open(%s) error: %s (%d)\n", filename, FRESULT_str(fr), fr);
+    
+    if (f_printf(&fil, "Hello, world!\n") < 0) {
+        printf("f_printf failed\n");
+    }
+    fr = f_close(&fil);
+    if (FR_OK != fr) {
+        printf("f_close error: %s (%d)\n", FRESULT_str(fr), fr);
+    }
+    f_unmount(pSD->pcName);
+
+    printf("File writing done.\n");
+
+        /* Sleep for 5 seconds.  */
+        tx_thread_sleep(TX_TIMER_TICKS_PER_SECOND * 5);
+
+        // /* Retrieve a message from the queue.  */
+        // status = tx_queue_receive(&queue_0, &received_message, TX_WAIT_FOREVER);
+
+        // /* Check completion status and make sure the message is what we 
+        //    expected.  */
+        // if ((status != TX_SUCCESS) || (received_message != thread_2_messages_received))
+        //     break;
         
-//         /* Otherwise, all is okay.  Increment the received message count.  */
-//         thread_2_messages_received++;
-//     }
-// }
+        // /* Otherwise, all is okay.  Increment the received message count.  */
+        // thread_2_messages_received++;
+    }
+}
 
 
 // void    thread_3_and_4_entry(ULONG thread_input)
